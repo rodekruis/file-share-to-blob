@@ -89,11 +89,14 @@ def main():
 
     # Get recent logs
     logFiles = list_file_share(file_share, 'export-data', sas_token)
-    logFilesRecent = []
+    logFilesRecent, logFilesAll = [], []
     for logFile in logFiles:
-        fileTime = datetime.strptime(logFile[-23:].replace('.csv', ''), "%Y-%m-%dT%H-%M-%S")
-        if fileTime > datetime.now() - timedelta(hours=24):
-            logFilesRecent.append(logFile)
+        try:
+            fileTime = datetime.strptime(logFile[-23:].replace('.csv', ''), "%Y-%m-%dT%H-%M-%S")
+            if fileTime > datetime.now() - timedelta(hours=24):
+                logFilesRecent.append(logFile)
+        except ValueError:
+            continue
     for logFile in logFilesRecent:
         download_file_share(file_share, logFile, f'export-data/{logFile}', sas_token)
 
@@ -106,21 +109,28 @@ def main():
     for logName in logsNames:
 
         # Merge all recent logs
-        dfRecentLogs = pd.DataFrame()
+        dfLogsRecent = pd.DataFrame()
         for logFile in [file for file in logFilesRecent if logName in file]:
             df = pd.read_csv(logFile)
-            if dfRecentLogs.empty:
-                dfRecentLogs = df.copy()
+            if dfLogsRecent.empty:
+                dfLogsRecent = df.copy()
             else:
-                pd.concat([dfRecentLogs, df]).drop_duplicates().reset_index(drop=True)
+                pd.concat([dfLogsRecent, df]).drop_duplicates().reset_index(drop=True)
 
         # Merge recent logs with master log file
-        download_blob(blob_container, f"{logsNames}.csv", f"{logsNames}.csv")
-        dfMasterLogs = pd.read_csv(f"{logsNames}.csv")
-        pd.concat([dfMasterLogs, dfRecentLogs]).drop_duplicates().reset_index(drop=True)
+        download_blob(blob_container, f"{logName}.csv", f"{logName}.csv")
+        dfMasterLogs = pd.read_csv(f"{logName}.csv")
+        pd.concat([dfMasterLogs, dfLogsRecent]).drop_duplicates().reset_index(drop=True)
 
         # Upload master log file
-        upload_blob(blob_container, f"{logsNames}.csv", f"{logsNames}.csv")
+        upload_blob(blob_container, f"{logName}.csv", f"{logName}.csv")
+
+        logFilesAll.append(f"{logName}.csv")
+        
+    # Remove all logs
+    logFilesAll += logFilesRecent
+    for logFile in logFilesAll:
+        os.remove(logFile)
 
     logging.info('Python timer trigger function ran at %s', utc_timestamp)
 
