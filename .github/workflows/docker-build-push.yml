@@ -4,14 +4,17 @@
 name: build and push to Azure Container Registry
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
+    inputs:
+      ENVIRONMENT:
+        required: true
+        type: string
+        description: Environment
 
 jobs:
   build:
     runs-on: 'ubuntu-latest'
+    environment: ${{ inputs.ENVIRONMENT }}
     defaults:
       run:
         working-directory: ./file-share-to-blob
@@ -35,3 +38,4 @@ jobs:
         push: true
         tags: ${{ secrets.REGISTRY_SERVER }}/file-share-to-blob:latest
         file: Dockerfile
+
