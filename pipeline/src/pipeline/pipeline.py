@@ -72,7 +72,8 @@ def list_file_share(share, directory, sas_token):
 
 
 @click.command()
-def main():
+@click.option('--verbose', '-v', is_flag=True, default=False, help="Print more output.")
+def main(verbose):
     utc_timestamp = datetime.utcnow()
 
     sas_token = generate_account_sas(
@@ -97,6 +98,9 @@ def main():
                 logFilesRecent.append(logFile)
         except ValueError:
             continue
+    if verbose:
+        print('Recent log files:')
+        print(logFilesRecent)
     for logFile in logFilesRecent:
         download_file_share(file_share, logFile, f'export-data/{logFile}', sas_token)
 
@@ -116,20 +120,21 @@ def main():
                 dfLogsRecent = df.copy()
             else:
                 pd.concat([dfLogsRecent, df]).drop_duplicates().reset_index(drop=True)
-
-        # print('recent logs:')
-        # print(dfLogsRecent.tail())
+        if verbose:
+            print(f'Recent records of {logName}:')
+            print(dfLogsRecent.tail())
 
         # Merge recent logs with master log file
         download_blob(blob_container, f"{logName}.csv", f"{logName}.csv")
         dfMasterLogs = pd.read_csv(f"{logName}.csv")
-        # print('old master logs:')
-        # print(dfMasterLogs.tail())
-
+        if verbose:
+            print(f'Master version of {logName}:')
+            print(dfMasterLogs.tail())
         dfMasterLogs = pd.concat([dfMasterLogs, dfLogsRecent]).drop_duplicates().reset_index(drop=True)
         dfMasterLogs.to_csv(f"{logName}.csv", index=False)
-        # print('new master logs:')
-        # print(dfMasterLogs.tail())
+        if verbose:
+            print(f'New master version of {logName}:')
+            print(dfMasterLogs.tail())
 
         # Upload master log file
         upload_blob(blob_container, f"{logName}.csv", f"{logName}.csv")
