@@ -16,7 +16,7 @@ setuptools.setup(
     version="0.1",
     author="Jacopo Margutti",
     author_email="jmargutti@redcross.nl",
-    description="template-blob-storage",
+    description="file-share-to-blob",
     package_dir={"": "src"},
     packages=setuptools.find_packages(where="src"),
     install_requires=install_requires,
@@ -28,7 +28,7 @@ setuptools.setup(
     },
     entry_points={
         'console_scripts': [
-            f"run-pipeline = {PROJECT_NAME}.pipeline:main",
+            f"file-share-to-blob = {PROJECT_NAME}.pipeline:main",
         ]
     }
 )

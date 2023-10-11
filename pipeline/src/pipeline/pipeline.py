@@ -117,10 +117,19 @@ def main():
             else:
                 pd.concat([dfLogsRecent, df]).drop_duplicates().reset_index(drop=True)
 
+        # print('recent logs:')
+        # print(dfLogsRecent.tail())
+
         # Merge recent logs with master log file
         download_blob(blob_container, f"{logName}.csv", f"{logName}.csv")
         dfMasterLogs = pd.read_csv(f"{logName}.csv")
-        pd.concat([dfMasterLogs, dfLogsRecent]).drop_duplicates().reset_index(drop=True)
+        # print('old master logs:')
+        # print(dfMasterLogs.tail())
+
+        dfMasterLogs = pd.concat([dfMasterLogs, dfLogsRecent]).drop_duplicates().reset_index(drop=True)
+        dfMasterLogs.to_csv(f"{logName}.csv", index=False)
+        # print('new master logs:')
+        # print(dfMasterLogs.tail())
 
         # Upload master log file
         upload_blob(blob_container, f"{logName}.csv", f"{logName}.csv")
